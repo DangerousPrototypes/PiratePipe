@@ -1,0 +1,73 @@
+{
+    "hardware": [
+        "3",
+        "4",
+        "5"
+    ],
+    "device": "24LC04B",
+    "position": null,
+    "test": [
+        {
+            "name": "setup",
+            "steps": [
+                {
+                    "commands": [
+                        "m",
+                        "4",
+                        "1"
+                    ]
+                },
+                {
+                    "hardware": [
+                        "3"
+                    ],
+                    "commands": [
+                        "P",
+                        "W"
+                    ]
+                },
+                {
+                    "hardware": [
+                        "4",
+                        "5"
+                    ],
+                    "commands": [
+                        "P",
+                        "3",
+                        "W"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "unlock",
+            "steps": [
+                {
+                    "commands": [
+                        "a"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "write",
+            "steps": [
+                {
+                    "commands": [
+                        "[0xa0 0 0 1 2 3 4 5 6 7 8]"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "read",
+            "steps": [
+                {
+                    "commands": [
+                        "[0xa0 0 [ 0xa1 r:9]"
+                    ]
+                }
+            ]
+        }
+    ]
+}
