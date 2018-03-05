@@ -69,6 +69,44 @@ test = {
 					]
 				}
 			]
+        },
+		{
+			"name" :"output_adjust",
+			"steps":
+			[
+                {
+                    #"hardware" : ["3", "4", "5"],	#this command, versions applies to. DEFAULT: ALL
+                    #"linefeed" : True,				#with <enter> after each command? DEFAULT: True
+                    "commands" : [
+						"o",	#output mode
+						"2",	#DEC
+						"2", 	#DEC
+                    ]
+                },
+            ]
+        },
+		{
+			"name":"write_over",
+            "steps":
+			[
+                {
+                    "commands" : [
+                        "[0xa0 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]",	#write data to eeprom
+                    ]
+                }
+
+            ]
+        },
+		{
+			"name":"read_over",
+            "steps":
+			[
+				{
+					"commands" : [
+						"[0xa0 0 [ 0xa1 r:20]", 	#read back from eeprom
+					]
+				}
+			]
         }
     ]
 }

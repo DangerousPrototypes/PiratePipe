@@ -72,7 +72,7 @@ class testSuite:
 				return False
 		else:
 			self.printYellow("Hardware version not defined, using on all versions")
-			t['hardware']={}
+			t['hardware']=[]
 			t['hardware'].append(self.version['hardwareMajor'])		
 		# try: 
 			# if self.version['hardwareMajor'] not in t['hardware']:
