@@ -6,6 +6,7 @@ import os
 import glob
 import requests
 import argparse
+import imp
 from pprint import pprint
 from colorama import init
 from colorama import Fore
@@ -19,7 +20,8 @@ parser.add_argument('--result', required=False, default='result.json', help='Tes
 parser.add_argument('--upload', required=False, action='store_true', help='Upload results?')
 parser.add_argument('--url', required=False, help='Upload URL')
 parser.add_argument('--apikey', required=False, help='Upload API key')
-
+parser.add_argument('--rig', required=False, default=None, help='Test rig definition file')
+parser.add_argument('--rigport', required=False, default=None, help='Test rig serial port')
 args = vars(parser.parse_args())
 #pprint( args)
 #if --upload make sure url and api key specified
@@ -29,10 +31,31 @@ if args['upload']==True:
 		sys.exit(2)
 
 class testSuite:
-	def __init__(self, p='COM4', s=115200, t=1):
-		self.port = serial.Serial(p, s, timeout=t)
+	def __init__(self, p='COM4', s=115200, t=1, rig=None, rigport=None):
+	
+		try:
+			self.port = serial.Serial(p, s, timeout=t)
+		except:
+			self.printRed('Could not open Bus Pirate serial port!')
+			quit()		
 		self.port.flushInput()
 		self.version={}
+		
+		self.rig=rig
+		# Setup the test rig if any...
+		if self.rig is not None:
+			try:
+				self.rig_port = serial.Serial(rigport, s, timeout=t)
+			except:
+				self.printRed('Could not open test rig serial port!')
+				quit()
+			self.rig_port.flushInput()
+			self.rig_port.write(0xFF) #0xFF clears the rig
+			rig_reply=self.rig_port.read(10000).decode()
+			if rig_reply !="OK" :
+				self.printRed("Test rig not found")
+				quit()
+		
 	def printRed(self, text):
 		print(Back.RED + text + Style.RESET_ALL)
 	def printYellow(self,text):
@@ -74,48 +97,42 @@ class testSuite:
 			self.printYellow("Hardware version not defined, using on all versions")
 			t['hardware']=[]
 			t['hardware'].append(self.version['hardwareMajor'])		
-		# try: 
-			# if self.version['hardwareMajor'] not in t['hardware']:
-				# print("Not for this hardware, skipping")
-				# return False
-		# except KeyError: 
-			# print("Hardware version not defined, using on all versions")
-			# t['hardware']={}
-			# t['hardware'].append(self.version['hardwareMajor'])
-		#pprint(self.version['hardwareMajor'])	
-		#pprint(t['hardware'])	
 		
 		self.test={}
+		if 'name' in t: 
+			self.test['name']=t['name']
+		else: 
+			self.printYellow("Missing test name, using 'unknown'")
+			self.test['name']='unknown'		
+		
 		if 'device' in t:
 			self.test['device']=t['device']
 		else:
 			self.printYellow("Missing device ID, using 'unknown'")
-			self.test['device']='unknown'		
-		# try: 
-			# self.test['device']=t['device']
-		# except KeyError: 
-			# print("Missing device ID, using 'unknown'")
-			# self.test['device']='unknown'
-
-		if 'position' in t: 
-			self.test['position']=t['position']
-		else: 
-			self.printYellow("Missing device position, using null")
-			self.test['position']=null			
-			
-		# try: 
-			# self.test['position']=t['position']
-		# except KeyError: 
-			# print("Missing device position, using null")
-			# self.test['position']=null
-
-			
+			self.test['device']='unknown'			
+						
 		if 'test' not in t:
-			self.printRed("Missing test directives!")
+			self.printRed("Missing test steps!")
 			self.test['test']={}
 		else:
-			self.printGreen("Test sections: " + str(len(t['test'])))	
+			self.printGreen("Test steps: " + str(len(t['test'])))	
 			self.test['test']=t['test']
+			
+		if self.rig is not None:
+			if self.test['device'] not in self.rig['devices']:
+				if self.rig['deviceNotFoundAction'] is 'exit':
+					self.printRed('Device not found in rig definition file, exiting!')
+					quit()
+				else:
+					self.printYellow('Device not found in rig definition file, skipping!')
+					return False
+			else:				
+				self.rig_port.write(0xFE) #0xFE set active device
+				self.rig_port.write(self.rig['devices'][self.test['device']]) #device position
+				rig_reply=self.rig_port.read(10000).decode()
+				if rig_reply !="OK" :
+					self.printRed("Test rig did not reply!")
+					quit()				
 		
 		return True
 		
@@ -128,8 +145,11 @@ class testSuite:
 		result['timestamp']={}
 		result['timestamp']['start']=time.time()
 		result['timestamp']['stop']=time.time()
+		result['name']=self.test['name']
 		result['device']=self.test['device']
-		result['position']=self.test['position']
+		
+		if self.rig is not None:
+			result['position']=self.rig['devices'][self.test['device']]
 		
 		result['test']={}
 	
@@ -137,26 +157,25 @@ class testSuite:
 		
 		#loop tests
 		self.port.flushInput()
-		for section in self.test['test']:
-			#get section name
-			if 'name' not in section:
-				self.printYellow("Missing section name, using 'unknown_"+str(i)+"'")
-				#use default section name
-				defaultName='unknown_' + str(i)
-				section['name']=defaultName
-			else:
-				self.printGreen("Starting section: " + section['name'])
-				#add to output array
-				
-			result['test'][section['name']]=[]
+		for steps in self.test['test']:
+			#get steps name
+			if 'name' not in steps:
+				self.printYellow("Missing step name, using 'step_"+str(i)+"'")
+				#use default steps name
+				defaultName='step_' + str(i)
+				steps['name']=defaultName
+
+			self.printGreen("Starting step: " + steps['name'])
+			#add to output array			
+			result['test'][steps['name']]=[]
 		
-			if 'steps' not in section:
-				self.printRed('Missing test steps, doing nothing!')
+			if 'steps' not in steps:
+				self.printRed('No test steps, doing nothing!')
 				continue;
-			else:
-				self.printGreen('Test steps: '+ str(len(section['steps'])))
+			#else:
+				#self.printGreen('Step sections: '+ str(len(steps['steps'])))
 				
-			for step in section['steps']:
+			for step in steps['steps']:
 				
 				#if 'hardware' not in then all else check against this version
 				if 'hardware' in step:
@@ -164,7 +183,7 @@ class testSuite:
 						continue;
 				
 				if 'commands' not in step:
-					self.printRed('Missing test commands, doing nothing!')
+					self.printRed('No test commands, doing nothing!')
 					continue;
 				
 				#loop commands
@@ -183,7 +202,7 @@ class testSuite:
 						if step['linefeed']==True:
 							self.port.write("\n".encode())
 							
-					#save output in array with step/section name/input and output sections
+					#save output in array with step/steps name/input and output stepss
 					data = self.port.read(10000).decode()
 					print(self.lastPrompt + data)					
 					output['result']=self.lastPrompt + data
@@ -191,7 +210,7 @@ class testSuite:
 					lines=data.splitlines(0)
 					self.lastPrompt=lines[-1]
 					
-					result['test'][section['name']].append(output)
+					result['test'][steps['name']].append(output)
 			i=i+1
 					
 		result['timestamp']['stop']=time.time()
@@ -218,7 +237,22 @@ class testSuite:
 		select.select({}, {}, {}, timeout)
 
 init() #colorama
-t=testSuite(args['port'],115200,1)
+
+#load test rig definition file if selected
+if args['rig'] is not None:
+	if args['rigport'] is None:
+		print(Back.RED + '--rigport is required with option --rig' + Style.RESET_ALL)
+		quit()
+	with open(args['rig'],'r') as infile:
+		rig=imp.load_source( 'rig', '',infile) 
+	#pprint(rig.rig)
+	rig=rig.rig
+else:
+	rig=None
+	
+
+
+t=testSuite(args['port'],115200,1,rig, args['rigport'])
 
 version=t.getVersion()
 result={}
@@ -230,7 +264,7 @@ if os.path.isfile(args['test']):
 		t.printRed('Skipped test, hardware version not supported!')
 	else:
 		testoutput=t.run()
-		result[testoutput['device']]=testoutput
+		result[testoutput['name']]=testoutput
 elif os.path.isdir(args['test']):
 	for filename in glob.glob(os.path.join(args['test'], '*.json')):
 		testStatus=t.importTest(filename)
@@ -238,7 +272,7 @@ elif os.path.isdir(args['test']):
 			t.printRed('Skipped test, hardware version not supported!')
 		else:
 			testoutput=t.run()
-			result[testoutput['device']]=testoutput
+			result[testoutput['name']]=testoutput
 
 t.saveResult(result,args['result'])
 

@@ -1,7 +1,7 @@
 test = {
     "hardware" : ["3", "4","5"],#hardware versions to test. DEFAULT: ALL
-    "device" : "24LC04B",		#name of this test
-    "position" : None,			#where on the test rig chain, None (null) for no test rig
+	"name" : "24LC04B",			#test name
+    "device" : "24LC04B",		#name of device, if any, used to lookup rig position (if any)
     "test" : 
 	[
 		{

@@ -1,1 +1,0 @@
-{"device":"24LC04B","position":null,"test":[{"name":"setup","steps":[{"commands":["m","4","1","P"]},{"hardware":["4","5"],"commands":["3"]},{"commands":["W"]}]},{"name":"unlock","steps":[{"commands":["a"]}]},{"name":"write","steps":[{"commands":["[0xa0 0 0 1 2 3 4 5 6 7 8]"]}]},{"name":"read","steps":[{"commands":["[0xa0 0 [ 0xa1 r:9]"]}]}]}

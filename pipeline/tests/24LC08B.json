@@ -4,8 +4,8 @@
         "4",
         "5"
     ],
+    "name": "24LC04B",
     "device": "24LC04B",
-    "position": null,
     "test": [
         {
             "name": "setup",
