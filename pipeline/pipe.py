@@ -49,12 +49,26 @@ class testSuite:
 			except:
 				self.printRed('Could not open test rig serial port!')
 				quit()
+			#get test rig version
 			self.rig_port.flushInput()
-			self.rig_port.write(0xFF) #0xFF clears the rig
+			self.rig_port.write("\n".encode())
+			self.rig_port.read(10000)
+			self.rig_port.flushInput()
+			self.rig_port.write("\n".encode())
+			self.rig_port.write("i\n".encode())
+			data = self.rig_port.read(10000).decode()
+			lines=data.splitlines(0)
+			self.lastPrompt=lines[-1];
+			#pprint(lines)
+			self.version['rig_hardware']=lines[2].rpartition('v')[2]
+			self.version['rig_hardwareMajor']=self.version['rig_hardware'].split('.')[0]
+			seq_type= type(self.version['rig_hardwareMajor'])
+			self.version['rig_hardwareMajor']=seq_type().join(filter(seq_type.isdigit, self.version['rig_hardwareMajor']))	
+			self.printGreen('Test Rig Hardware: ' + self.version['rig_hardware'])	
+			self.rig_port.write("m 5 1 1 2 1 2 2 \n".encode()) #put in SPI mode
 			rig_reply=self.rig_port.read(10000).decode()
-			if rig_reply !="OK" :
-				self.printRed("Test rig not found")
-				quit()
+			self.printYellow(rig_reply)
+			self.printYellow(self.setRigChip(0xff, 0))
 		
 	def printRed(self, text):
 		print(Back.RED + text + Style.RESET_ALL)
@@ -77,6 +91,8 @@ class testSuite:
 		#pprint(lines)
 		self.version['hardware']=lines[2].rpartition('v')[2]
 		self.version['hardwareMajor']=self.version['hardware'].split('.')[0]
+		seq_type= type(self.version['hardwareMajor'])
+		self.version['hardwareMajor']=seq_type().join(filter(seq_type.isdigit, self.version['hardwareMajor']))
 		firmwareInfo=lines[3].split()
 		self.version['firmware']=firmwareInfo[1].strip('v')
 		self.version['commit']=firmwareInfo[2].strip('r')
@@ -84,7 +100,7 @@ class testSuite:
 		self.printGreen('Hardware: ' + self.version['hardware'])
 		self.printGreen('Firmware: ' + self.version['firmware'] + ' commit: '+self.version['commit'] )
 		return data
-
+		
 	def importTest(self,test):
 		t = json.load(open(test))
 		#test if this is a test for our hardware version
@@ -127,15 +143,42 @@ class testSuite:
 					self.printYellow('Device not found in rig definition file, skipping!')
 					return False
 			else:				
-				self.rig_port.write(0xFE) #0xFE set active device
-				self.rig_port.write(self.rig['devices'][self.test['device']]) #device position
-				rig_reply=self.rig_port.read(10000).decode()
-				if rig_reply !="OK" :
-					self.printRed("Test rig did not reply!")
-					quit()				
+				d=self.rig['devices'][self.test['device']];
+				self.printGreen("Position: "+str(d))
+				
+				#get board number
+				board=d>>4 #upper four bits are the board position
+				self.printGreen("Rig board number: "+str(board+1))
+				
+				position=d&0x0F #remove board number
+				self.printGreen("Board position: "+str(position))
+				n = 0
+				k=1
+				#reverse the bits
+				for i in range(8):              	# for each bit number
+					n=n<<1
+					if (position & k):     	# if it matches that bit
+						n |= 1				   	# set the "opposite" bit in answer
+					k=k<<1
+					#print("<<: "+hex(n))
+						
+				#print("Reverse: "+hex(n))
+				n=n|0x08
+				#print("W/Enable: "+hex(n))
+				self.printYellow(self.setRigChip(board, n))
+				quit()
+	
 		
 		return True
-		
+	def setRigChip(self, board, chip):
+		for i in range(4): #currently up to four boards
+			if(i==board):
+				self.rig_port.write((hex(chip)).encode()) #send the position and set the enable bit`
+			else:
+				self.rig_port.write((" 0x00").encode()) #send 0x00
+		self.rig_port.write(("\n][\n").encode()) #send linefeed, bump the latch
+		rig_reply=self.rig_port.read(10000).decode()
+		return rig_reply
 		
 	def run(self):
 	
