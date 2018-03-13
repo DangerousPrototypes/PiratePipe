@@ -117,12 +117,14 @@ class testSuite:
 		self.test={}
 		if 'name' in t: 
 			self.test['name']=t['name']
+			self.printGreen("Test: " + t['name'])
 		else: 
 			self.printYellow("Missing test name, using 'unknown'")
 			self.test['name']='unknown'		
 		
 		if 'device' in t:
 			self.test['device']=t['device']
+			self.printGreen("Device: " + t['device'])
 		else:
 			self.printYellow("Missing device ID, using 'unknown'")
 			self.test['device']='unknown'			
@@ -165,8 +167,9 @@ class testSuite:
 				#print("Reverse: "+hex(n))
 				n=n|0x08
 				#print("W/Enable: "+hex(n))
+				self.printGreen("Setup test rig active chip")
 				self.printYellow(self.setRigChip(board, n))
-				quit()
+				#quit()
 	
 		
 		return True
