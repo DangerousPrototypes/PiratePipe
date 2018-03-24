@@ -154,6 +154,7 @@ class testSuite:
 				
 				position=d&0x0F #remove board number
 				self.printGreen("Board position: "+str(position))
+				position-=1
 				n = 0
 				k=1
 				#reverse the bits
@@ -165,7 +166,7 @@ class testSuite:
 					#print("<<: "+hex(n))
 						
 				#print("Reverse: "+hex(n))
-				n=n|0x08
+				#n=n|0x08 /E is disabled high, active low...
 				#print("W/Enable: "+hex(n))
 				self.printGreen("Setup test rig active chip")
 				self.printYellow(self.setRigChip(board, n))
@@ -178,13 +179,16 @@ class testSuite:
 			if(i==board):
 				self.rig_port.write((hex(chip)).encode()) #send the position and set the enable bit`
 			else:
-				self.rig_port.write((" 0x00").encode()) #send 0x00
+				self.rig_port.write((" 0x08").encode()) #send 0x08 /E disabled high
 		self.rig_port.write(("\n][\n").encode()) #send linefeed, bump the latch
 		rig_reply=self.rig_port.read(10000).decode()
 		return rig_reply
 		
 	def run(self):
-	
+		#reset to HiZ
+		self.port.write("\nm 1\n".encode())
+		self.port.read(10000).decode()
+		
 		#test output array
 		result={}
 		
@@ -260,6 +264,8 @@ class testSuite:
 			i=i+1
 					
 		result['timestamp']['stop']=time.time()
+		self.port.write("\nm 1\n".encode())
+		self.port.read(10000).decode()
 		return result
 							
 	def display(self, output):
