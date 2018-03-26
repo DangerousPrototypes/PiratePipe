@@ -1,0 +1,1 @@
+miniterm.py --eol LF COM7 115200

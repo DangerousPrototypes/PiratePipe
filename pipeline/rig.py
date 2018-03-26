@@ -6,8 +6,8 @@ rig = {
 		"23K256":3,
 		"MCP3001":4,
 		"MCP4131":5,
-		"DS1307":6,
-		"MCP7940M":7,
+		"DS1307":7,#6&7 swapped on first version
+		"MCP7940M":6,
 		"SK9822":8,
 		"VK2828U7G5L":9,
 		"HMC5883L":10,
