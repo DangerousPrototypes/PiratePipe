@@ -16,6 +16,7 @@ import serial
 from serial.tools.list_ports import comports
 from serial.tools import hexlify_codec
 import json
+import time
 
 # pylint: disable=wrong-import-order,wrong-import-position
 
@@ -360,7 +361,7 @@ class Miniterm(object):
         self.log['result']=''
         self.log['command']=''
         self.logger=[]
-        self.logfilename='log.json'
+        self.logfilename='log-'+str(time.time())+'.json'
 
     def _start_reader(self):
         """Start reader thread"""

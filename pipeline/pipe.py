@@ -158,12 +158,12 @@ class testSuite:
 			self.printGreen("Position: "+str(d))
 			
 			#get board number
+			d-=1
 			board=d>>4 #upper four bits are the board position
 			self.printGreen("Rig board number: "+str(board+1))
 			
 			position=d&0x0F #remove board number
-			self.printGreen("Board position: "+str(position))
-			position-=1
+			self.printGreen("Board position: "+str(position+1))
 			n = 0
 			k=1
 			#reverse the bits
