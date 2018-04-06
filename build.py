@@ -33,13 +33,22 @@ while True:
 	print(hashlong)
 	print(gitoutput)
 	print(newhashlong)
-
+	result={}
 	if args['test'] is not False or hashlong != newhashlong:
 		print('Preparing build report')
 		subprocess.check_output('cd '+args['workdir']+' && make clean', shell=True)
-		makeouput=subprocess.check_output('cd '+args['workdir']+' && make bin', shell=True).decode()
+		try:
+			makeoutput=subprocess.check_output('cd '+args['workdir']+' && make bin', shell=True,stderr=subprocess.STDOUT).decode()
+			result['error']='0';
+		except subprocess.CalledProcessError as e:
+			#print("command '"+e.cmd+"' return with error (code "+e.returncode.decode()+"): "+e.output)	
+			pprint(e.returncode)
+			#pprint(stderr)
+			makeoutput=str(e.output.decode())
+			result['error']='1'
+			pprint(makeoutput)
+
 		#create data structure
-		result={}
 		result['timestamp']={}
 		result['timestamp']['start']=timestampstart
 		result['timestamp']['stop']=time.time()
@@ -50,7 +59,7 @@ while True:
 		result['endhashshort']=newhashshort
 		result['endhashlong']=newhashlong
 		result['gitoutput']=gitoutput
-		result['makeoutput']=makeouput
+		result['makeoutput']=makeoutput
 		result['apikey']=args['apikey']
 		result['response']='json'
  	
@@ -60,20 +69,21 @@ while True:
 			with open(args['workdir'] + '/' + args['bin'], "rb") as firmware: #TODO check if exists
 				result['base64encbin']= base64.b64encode(firmware.read()).decode()
 
-			#upload .json to API
-			print("Dumping JSON")	
-			with open(args['workdir'] + '/result.json', 'w') as outfile:
-				json.dump(result, outfile, indent=4, sort_keys=False)
+		#upload .json to API
+		print("Dumping JSON")	
+		with open(args['workdir'] + '/result.json', 'w') as outfile:
+			json.dump(result, outfile, indent=4, sort_keys=False)
 			
-			print("Uploading JSON")
-			with open(args['workdir'] + '/result.json', 'rb') as f: 
-				r = requests.post(args['url'], files={'result': f})	
-			pprint(r)
-			pprint(r.text)
-			subprocess.check_output('cd '+args['workdir']+' && make clean', shell=True)
+		print("Uploading JSON")
+		with open(args['workdir'] + '/result.json', 'rb') as f: 
+			r = requests.post(args['url'], files={'result': f})	
+		pprint(r)
+		pprint(r.text)
+		subprocess.check_output('cd '+args['workdir']+' && make clean', shell=True)
 
 	print('sleep')
 	#sleep for configured number of minutes
 	time.sleep(60*10)
+
 
 
