@@ -15,6 +15,10 @@ parser.add_argument('--apikey', required=False, help='Upload API key')
 parser.add_argument('--workdir', required=True, help='Working directory')
 parser.add_argument('--bin', required=True, help='Binary to upload')
 parser.add_argument('--test', required=False, default=False, help='Run in test mode')
+parser.add_argument('--hardware', required=True, help='Hardware version')
+parser.add_argument('--firmware', required=True, help='Firmware version')
+parser.add_argument('--make', required=True, help='Make command')
+
 args = vars(parser.parse_args())
 #pprint(args)
 while True:
@@ -38,7 +42,7 @@ while True:
 		print('Preparing build report')
 		subprocess.check_output('cd '+args['workdir']+' && make clean', shell=True)
 		try:
-			makeoutput=subprocess.check_output('cd '+args['workdir']+' && make bin', shell=True,stderr=subprocess.STDOUT).decode()
+			makeoutput=subprocess.check_output('cd '+args['workdir']+' && '+args['make'], shell=True,stderr=subprocess.STDOUT).decode()
 			result['error']='0';
 		except subprocess.CalledProcessError as e:
 			#print("command '"+e.cmd+"' return with error (code "+e.returncode.decode()+"): "+e.output)	
@@ -52,8 +56,8 @@ while True:
 		result['timestamp']={}
 		result['timestamp']['start']=timestampstart
 		result['timestamp']['stop']=time.time()
-		result['firmware']='8'
-		result['hardware']='NG1'
+		result['firmware']=args['firmware']
+		result['hardware']=args['hardware']
 		result['starthashshort']=hashshort
 		result['starthashlong']=hashlong
 		result['endhashshort']=newhashshort
@@ -62,7 +66,8 @@ while True:
 		result['makeoutput']=makeoutput
 		result['apikey']=args['apikey']
 		result['response']='json'
- 	
+		result['firmware_type']=args['bin'].split(".")[-1] 	
+
 		#base64 encode file
 		if os.path.exists(args['workdir'] + '/' + args['bin']):
 			print('Base 64 encoding file')
