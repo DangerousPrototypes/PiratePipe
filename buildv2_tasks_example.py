@@ -1,0 +1,22 @@
+tasks=[
+	{ 
+		"hardware":"NG1",
+		"firmware":"8",
+		"work_dir":"/path/to/source",
+		"make_command":"make bin",
+		"output_dir":"/path/to/output",
+		"output_file":"buspirateNG.bin",
+		"api_url":"http://site/api",
+		"api_key":"api_key",
+	},
+	{ 
+		"hardware":"3",
+		"firmware":"8",
+		"work_dir":"/path/to/source",
+		"make_command":"make",
+		"output_dir":"/path/to/output",
+		"output_file":"busPirate3X.X.production.hex",
+		"api_url":"http://site/api",
+		"api_key":"api_key",
+	}
+]
