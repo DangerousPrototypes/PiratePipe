@@ -13,6 +13,7 @@ from pprint import pprint
 parser = argparse.ArgumentParser(description='Dangerous Prototypes auto build v2.0')
 parser.add_argument('--tasks', required=False, default='buildv2_tasks.py', help='Build tasks configuration file')
 parser.add_argument('--interval', required=False, default='10', help='Repeat interval in minutes')
+parser.add_argument('--test', required=False, default=False, help='Run in test mode')
 
 args = vars(parser.parse_args())
 #pprint(args)
