@@ -11,9 +11,9 @@ from pprint import pprint
 
 
 parser = argparse.ArgumentParser(description='Dangerous Prototypes auto build v2.0')
-parser.add_argument('--tasks', required=False, default='buildv2_tasks.py', help='Build tasks configuration file')
-parser.add_argument('--interval', required=False, default='10', help='Repeat interval in minutes')
-parser.add_argument('--test', required=False, default=False, help='Run in test mode')
+parser.add_argument('--tasks', required=False, default='buildv2_tasks.py', help='Build tasks configuration file (default buildv2_tasks.py)')
+parser.add_argument('--interval', required=False, default=10.0, help='Repeat interval in minutes (default 10)')
+parser.add_argument('--test', required=False, default=False, help='Run in test mode, force result upload even if no new commits')
 
 args = vars(parser.parse_args())
 #pprint(args)
@@ -27,9 +27,9 @@ class autoBuild:
 		
 	def runTasks(self):
 		for task in self.tasks:
-			#self.make(task)
-			pprint(task)
-			pprint(task['work_dir'])
+			self.make(task)
+			#pprint(task)
+			#pprint(task['work_dir'])
 	
 	def make(self, task):
 		timestampstart=time.time()
